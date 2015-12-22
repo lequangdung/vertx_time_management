@@ -1,0 +1,212 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mongo="http://www.springframework.org/schema/data/mongo"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context-4.2.xsd
+	http://www.springframework.org/schema/data/mongo
+    http://www.springframework.org/schema/data/mongo/spring-mongo-1.0.xsd">
+
+	<context:annotation-config />
+
+	<context:property-placeholder location="file:config.properties"
+		ignore-unresolvable="true" order="1" />
+
+	<mongo:mongo host="${time.management.dbaccess.host}" port="${time.management.dbaccess.port}">
+	</mongo:mongo>
+	<mongo:db-factory dbname="TimeManagement"
+		username="${time.management.dbaccess.user}" password="${time.management.dbaccess.pass}"
+		mongo-ref="mongo" />
+
+	<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">
+		<constructor-arg name="mongoDbFactory" ref="mongoDbFactory" />
+	</bean>
+
+	<mongo:repositories
+		base-package="vn.com.lqdung.collection.webservice.management.time.repositories" />
+
+	<bean id="restControllerRegistry"
+		class="vn.com.lqdung.collection.webservice.management.time.rest.RestControllerRegistry"
+		factory-method="getInstance" />
+
+	<bean id="restService" class="vn.com.lqdung.collection.webservice.management.time.server.RestServiceImpl">
+		<property name="restControllerRegistry" ref="restControllerRegistry" />
+		<property name="authorizationHandler" ref="authorizationHandler" />
+		<property name="userRepository" ref="userRepository" />
+		<property name="httpPort" value="${time.management.http.port}" />
+	</bean>
+
+	<bean id="authorizationHandler"
+		class="vn.com.lqdung.collection.webservice.management.time.authenticate.AuthorizationHandler">
+		<property name="tokenStoreRepository" ref="tokenStoreRepository" />
+	</bean>
+
+<!--	<bean id="test"
+		class="com.tma.ov.tool.time.management.services.test.ExampleController" />
+
+	<bean id="dashboard"
+		class="com.tma.ov.tool.time.management.services.dashboard.DashboardController" />
+
+	<bean id="historyService"
+		class="com.tma.ov.tool.time.management.services.dashboard.HistoryService"
+		init-method="runUpdatingPrhDaily" destroy-method="cancelUpdatingTask">
+		<property name="prhRepository" ref="prhRepository" />
+		<property name="dashboardService" ref="dashboardService" />
+		<property name="vtbfRepository" ref="vtbfRepository" />
+		<property name="releaseRepository" ref="releaseRepository" />
+	</bean>
+
+	<bean id="dashboardService"
+		class="com.tma.ov.tool.time.management.services.dashboard.DashboardService">
+		<property name="prhRepository" ref="prhRepository" />
+		<property name="vtbfRepository" ref="vtbfRepository" />
+		<property name="releaseRepository" ref="releaseRepository" />
+		<property name="testPlanRepository" ref="testPlanRepository" />
+		<property name="rtrPhabricatorCommitRepository" ref="rtrPhabricatorCommitRepository" />
+	</bean>
+
+	<bean id="testplan"
+		class="com.tma.ov.tool.time.management.services.testplan.TestPlanController" />
+	<bean id="uttestplan"
+		class="com.tma.ov.tool.time.management.services.testplan.UTTestPlanController" />
+	<bean id="testPlanServiceImpl"
+		class="com.tma.ov.tool.time.management.services.testplan.TestPlanServiceImpl" />
+	<bean id="utTestPlanServiceImpl"
+		class="com.tma.ov.tool.time.management.services.testplan.UTTestPlanServiceImpl" />
+
+	<bean id="prController" class="com.tma.ov.tool.time.management.services.pr.PRController">
+		<property name="prService" ref="prService" />
+	</bean>
+	<bean id="prService" class="com.tma.ov.tool.time.management.services.pr.PRService">
+		<property name="vtbfRepository" ref="vtbfRepository" />
+		<property name="vtbfAdvancedPropertiesRepository" ref="vtbfAdvancedPropertiesRepository" />
+		<property name="runningNoteRepository" ref="runningNoteRepository" />
+
+	</bean>
+
+	<bean id="checkListController"
+		class="com.tma.ov.tool.time.management.services.checklist.CheckListController">
+		<property name="checkListService" ref="checkListService" />
+	</bean>
+
+	<bean id="checkListService"
+		class="com.tma.ov.tool.time.management.services.checklist.CheckListService">
+		<property name="releaseRepository" ref="releaseRepository" />
+	</bean>
+
+	<bean id="featureService"
+		class="com.tma.ov.tool.time.management.services.feature.FeatureServices" />
+
+	<bean id="featureController"
+		class="com.tma.ov.tool.time.management.services.feature.FeatureController" />
+
+	<bean id="modelCustomEventListenner" class="com.tma.ov.tool.time.management.dbaccess.model.ModelCustomEventListenner" />
+
+
+	<bean id="fileTransferImpl"
+		class="com.tma.ov.tool.time.management.filetransfer.FileTransferImpl">
+		<constructor-arg name="userName"
+			value="${time.management.remote.username}"></constructor-arg>
+		<constructor-arg name="usrPssw"
+			value="${time.management.remote.password}"></constructor-arg>
+		<constructor-arg name="host" value="${time.management.remote.host}"></constructor-arg>
+		<constructor-arg name="port" value="${time.management.remote.port}"></constructor-arg>
+		<constructor-arg name="timeout" value="${time.management.remote.timeout}"></constructor-arg>
+	</bean>
+	<bean id="schedulerSyncData"
+		class="com.tma.ov.tool.time.management.scheduler.SchedulerSyncData"
+		init-method="runScheduler" destroy-method="cancelTimer">
+		<constructor-arg name="fileTransfer" ref="fileTransferImpl"></constructor-arg>
+		<constructor-arg name="schedulerTime" value="${time.management.scheduler.time}"></constructor-arg>
+		<property name="srcFilePath" value="${time.management.file.download.src.remote}"></property>
+		<property name="desFilePath" value="${time.management.file.download.des.local}"></property>
+		<property name="srcRunningNotesFilePath"
+			value="${time.management.file.download.runningnotes.src.remote}"></property>
+		<property name="desRunningNotesFilePath"
+			value="${time.management.file.download.runningnotes.des.local}"></property>
+		<property name="version" value="${time.management.columbia.version}"></property>
+		<property name="columbiaUsr" value="${time.management.columbia.username}"></property>
+		<property name="columbiaPssw" value="${time.management.columbia.password}"></property>
+		<property name="columbiaURL" value="${time.management.columbia.url}"></property>
+		<property name="utColumbiaURL" value="${time.management.columbia.ut.url}"></property>
+		<property name="enableTimer" value="${time.management.scheduler.enableTimer}"></property>
+	</bean>
+
+
+	<bean id="phabricatorDataProcessor"
+		class="com.tma.ov.tool.time.management.services.phabricator.PhabricatorDataProcessor">
+		<property name="prPhabricatorCommitRepository" ref="prPhabricatorCommitRepository" />
+		<property name="rtrPhabricatorCommitRepository" ref="rtrPhabricatorCommitRepository" />
+		<property name="rtrRepository" ref="rtrRepository" />
+
+	</bean>
+
+	<bean id="phbricatorDataRetrieverTask"
+		class="com.tma.ov.tool.time.management.scheduler.PhabricatorDataRetrieverTask">
+		<property name="csvGenerationScriptLocation"
+			value="${time.management.phabricator.scriptexecuter.path}" />
+		<property name="period"
+			value="${time.management.phabricator.scriptexecuter.period}" />
+		<property name="releaseRepository" ref="releaseRepository" />
+		<property name="phabricatorDataProcessor" ref="phabricatorDataProcessor" />
+		<property name="enableScheduler"
+			value="${time.management.scheduler.enablePhabricatorTask}" />
+
+	</bean>
+
+	<bean id="phabricatorService"
+		class="com.tma.ov.tool.time.management.services.phabricator.PhabricatorService">
+		<property name="prPhabricatorCommitRepository" ref="prPhabricatorCommitRepository" />
+		<property name="rtrPhabricatorCommitRepository" ref="rtrPhabricatorCommitRepository" />
+	</bean>
+
+	<bean id="phabricatorController"
+		class="com.tma.ov.tool.time.management.services.phabricator.PhabricatorController">
+		<property name="phabricatorService" ref="phabricatorService" />
+	</bean>
+
+	<bean id="rtrService" class="com.tma.ov.tool.time.management.services.rtr.RtrService">
+		<property name="rtrRepository" ref="rtrRepository" />
+		<property name="rtrListFile" value="${time.management.file.rtrListLocation}" />
+
+	</bean>
+
+	<bean id="settingService"
+		class="com.tma.ov.tool.time.management.services.setting.SettingService">
+		<property name="filterRepository" ref="filterRepository" />
+	</bean>
+
+	<bean id="settingController"
+		class="com.tma.ov.tool.time.management.services.setting.SettingController">
+		<property name="settingService" ref="settingService" />
+	</bean>
+
+	<bean id="loginController"
+		class="com.tma.ov.tool.time.management.services.usermanagement.LoginController">
+		<property name="userManagementService" ref="userManagementService" />
+	</bean>
+
+	<bean id="userActivationController"
+		class="com.tma.ov.tool.time.management.services.usermanagement.UserActivationController">
+		<property name="userManagementService" ref="userManagementService" />
+		<property name="httpUIHost" value="${time.management.http.uihost}" />
+		<property name="httpUIPort" value="${time.management.http.uiport}" />
+	</bean>
+
+	<bean id="userManagementController"
+		class="com.tma.ov.tool.time.management.services.usermanagement.UserManagementController">
+		<property name="userManagementService" ref="userManagementService" />
+		<property name="httpUIHost" value="${time.management.http.uihost}" />
+		<property name="httpUIPort" value="${time.management.http.uiport}" />
+	</bean>
+
+	<bean id="userManagementService"
+		class="com.tma.ov.tool.time.management.services.usermanagement.UserManagementService">
+		<property name="userRepository" ref="userRepository" />
+		<property name="tokenStoreRepository" ref="tokenStoreRepository" />
+		<property name="activationCodeRepository" ref="activationCodeRepository" />
+
+	</bean> -->
+
+</beans>
